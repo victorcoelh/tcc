@@ -4,9 +4,9 @@ from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from tqdm import tqdm
 
-from basemodel import Model
-from src.dataset import Dataset
-from src.type_hints import ImageBatch
+from src.data_loading.dataset import Dataset
+from src.models.basemodel import Model
+from src.utils.type_hints import ImageBatch
 
 
 class ModelTrainer:
@@ -47,7 +47,7 @@ class ModelTrainer:
                 total_loss += loss.mean().item()
                 
                 pbar.set_description(f"Epoch {epoch+1}/{epochs}, "
-                                     f"Training Loss: {(total_loss/i+1):.4f}")
+                                     f"Training Loss: {(total_loss/(i+1)):.4f}")
                 
                 loss.backward()
                 self.__optimizer.step()

@@ -1,15 +1,19 @@
 import math
-from typing import Self
+from typing import Self, TypeVar
 
+from beartype import beartype
 import cv2
 import numpy as np
 import pandas as pd
 
-from src.preprocessing import resize_images
-from src.type_hints import Image, ImageBatch
+from src.data_loading.preprocessing import resize_images
+from src.utils.type_hints import Image, ImageBatch
 
 
-class Dataset:
+TDataset = TypeVar("TDataset", bound="Dataset")
+
+
+class Dataset(object):
     def __init__(
         self,
         image_paths: list[str],
@@ -40,10 +44,10 @@ class Dataset:
     def __len__(self) -> int:
         return math.ceil(len(self.image_paths) / self.batch_size)
     
-    def __iter__(self) -> Self:
+    def __iter__(self) -> TDataset: # type: ignore
         self.__current = -1
         self.loaded_to_memory = 1000
-        return self
+        return self # type: ignore
     
     def __next__(self) -> tuple[ImageBatch, list[str]]:
         self.__current += 1
@@ -52,9 +56,15 @@ class Dataset:
         raise StopIteration
     
 
-def get_path_and_captions(csv_path: str) -> tuple[list[str], list[str]]:
+def get_path_and_captions(csv_path: str, image_dir: str) -> tuple[list[str], list[str]]:
     read_csv = pd.read_csv(csv_path)
-    return read_csv["filepath"].to_list(), read_csv["captions"].to_list()
+    
+    captions = read_csv["captions"].to_list()
+    file_paths = read_csv["filepath"]\
+        .map(lambda path: image_dir + path)\
+        .to_list()
+    
+    return file_paths, captions
 
 
 def load_image(image_path: str) -> Image:

@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 
 from transformers.image_processing_utils import BaseImageProcessor
 from transformers.modeling_utils import PreTrainedModel
-from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers.tokenization_utils import PreTrainedTokenizerBase
 
-from src.type_hints import ImageBatch
+from src.utils.type_hints import ImageBatch
 
 
 class Model(ABC):
@@ -20,7 +20,7 @@ class Model(ABC):
 
     @property
     @abstractmethod
-    def tokenizer(self) -> PreTrainedTokenizer:
+    def tokenizer(self) -> PreTrainedTokenizerBase:
         pass
 
     @abstractmethod

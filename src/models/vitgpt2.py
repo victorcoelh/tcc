@@ -2,8 +2,8 @@ import torch
 import transformers
 from transformers import AutoTokenizer, VisionEncoderDecoderModel, ViTImageProcessor
 
-from basemodel import Model
-from src.type_hints import ImageBatch
+from src.models.basemodel import Model
+from src.utils.type_hints import ImageBatch
 
 
 class ViTGPT2(Model):
@@ -57,5 +57,5 @@ class ViTGPT2(Model):
         return self.__model # type: ignore
 
     @property
-    def tokenizer(self) -> transformers.tokenization_utils.PreTrainedTokenizer:
+    def tokenizer(self) -> transformers.tokenization_utils.PreTrainedTokenizerBase:
         return self.__tokenizer # type: ignore
