@@ -1,0 +1,19 @@
+name: tcc
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - ipython
+  - python=3.12
+  - pytorch
+  - pytorch-cuda=12.4
+  - torchaudio
+  - torchvision
+  - ruff
+  - numpy
+  - transformers
+  - jaxtyping
+  - beartype
+  - matplotlib
+prefix: /home/radiohead/anaconda3/envs/tcc
