@@ -27,6 +27,11 @@ class ModelTrainer:
         self.validation_loss = []
         self.training_cider = []
         self.validation_cider = []
+        
+    def freeze_model_layers(self, layers_to_train: list[str]) -> None:
+        for layer_name, param in self.__model.named_parameters():
+            if not any(name in layer_name for name in layers_to_train):
+                param.requires_grad = False
 
     def train(self, epochs: int, training_dataset: Dataset, validation_dataset: Dataset) -> None:
         self.__model.train()
@@ -110,8 +115,3 @@ class ModelTrainer:
         plt.plot(epochs, validation_cider)
         
         plt.savefig("training_metrics.png")
-
-    def freeze_model_layers(self, layers_to_train: list[str]) -> None:
-        for layer_name, param in self.__model.named_parameters():
-            if not any(name in layer_name for name in layers_to_train):
-                param.requires_grad = False
