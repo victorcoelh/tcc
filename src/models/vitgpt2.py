@@ -9,10 +9,12 @@ from src.utils.type_hints import ImageBatch
 class ViTGPT2(Model):
     def __init__(self, device: str, endpoint: str = "nlpconnect/vit-gpt2-image-captioning") -> None:
         self.__device = device
-        self.__processor = ViTImageProcessor.from_pretrained(endpoint)
+
+        self.__processor: ViTImageProcessor = ViTImageProcessor.from_pretrained(endpoint) # type: ignore
         self.__tokenizer = AutoTokenizer.from_pretrained(endpoint)
 
-        self.__model = VisionEncoderDecoderModel.from_pretrained(endpoint)
+        self.__model: VisionEncoderDecoderModel = VisionEncoderDecoderModel\
+            .from_pretrained(endpoint) # type: ignore
         self.__model.to(self.__device) # type: ignore
         self.__model.eval()
 
@@ -26,7 +28,7 @@ class ViTGPT2(Model):
 
         return output
 
-    def __model_predict(self, input_array: ImageBatch) -> list[list[str]]:
+    def __model_predict(self, input_array: ImageBatch) -> list[str]:
         predictions = []
 
         with torch.no_grad():

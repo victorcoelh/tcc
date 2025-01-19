@@ -1,7 +1,6 @@
 import math
-from typing import Self, TypeVar
+from typing import TypeVar
 
-from beartype import beartype
 import cv2
 import numpy as np
 import pandas as pd
@@ -9,15 +8,14 @@ import pandas as pd
 from src.data_loading.preprocessing import resize_images
 from src.utils.type_hints import Image, ImageBatch
 
-
 TDataset = TypeVar("TDataset", bound="Dataset")
 
 
-class Dataset(object):
+class Dataset:
     def __init__(
         self,
         image_paths: list[str],
-        captions: list[str],
+        captions: list[list[str]],
         batch_size: int,
         seed: int | None = None) -> None:
 
@@ -29,7 +27,7 @@ class Dataset(object):
         self.image_paths = image_paths
         self.captions = captions
         
-    def __getitem__(self, index: int) -> tuple[ImageBatch, list[str]]:
+    def __getitem__(self, index: int) -> tuple[ImageBatch, list[list[str]]]:
         start = index * self.batch_size
         end = min(start + self.batch_size, len(self.image_paths))
         
@@ -49,17 +47,21 @@ class Dataset(object):
         self.loaded_to_memory = 1000
         return self # type: ignore
     
-    def __next__(self) -> tuple[ImageBatch, list[str]]:
+    def __next__(self) -> tuple[ImageBatch, list[list[str]]]:
         self.__current += 1
         if self.__current < len(self):
             return self.__getitem__(self.__current)
         raise StopIteration
     
 
-def get_path_and_captions(csv_path: str, image_dir: str) -> tuple[list[str], list[str]]:
+def get_path_and_captions(csv_path: str, image_dir: str) -> tuple[list[str], list[list[str]]]:
     read_csv = pd.read_csv(csv_path)
     
-    captions = read_csv["captions"].to_list()
+    captions = read_csv["captions"]\
+        .to_list()
+
+    captions = list(map(fix_captions, captions))
+
     file_paths = read_csv["filepath"]\
         .map(lambda path: image_dir + path)\
         .to_list()
@@ -68,4 +70,14 @@ def get_path_and_captions(csv_path: str, image_dir: str) -> tuple[list[str], lis
 
 
 def load_image(image_path: str) -> Image:
-    return cv2.imread(image_path)[:, :, ::-1]
+    image = cv2.imread(image_path)[:, :, ::-1]
+    return image
+
+
+def fix_captions(captions: str) -> list[str]:
+    fixed_captions = captions\
+        .replace("\n", "")\
+        .strip("[]")\
+        .split("' '")
+        
+    return [caption.strip("'\"") for caption in fixed_captions]

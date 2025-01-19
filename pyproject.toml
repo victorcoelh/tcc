@@ -19,5 +19,6 @@ pythonPlatform = "Linux"
 [tool.ruff]
 
 select = ["ALL"]
-ignore = ["F722", "D100", "D101", "D102", "D103", "D104", "D105", "D107", "PGH003", "W293", "FA102"]
+ignore = ["F722", "D100", "D101", "D102", "D103", "D104", "D105", "D107",
+        "PGH003", "W293", "FA102", "ANN101"]
 line-length = 100

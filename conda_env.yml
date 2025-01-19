@@ -1,8 +1,9 @@
 name: tcc
 channels:
+  - defaults
   - pytorch
   - nvidia
-  - defaults
+  - conda-forge
 dependencies:
   - ipython
   - python=3.12
@@ -11,9 +12,12 @@ dependencies:
   - torchaudio
   - torchvision
   - ruff
-  - numpy
+  - numpy>2
+  - pandas
   - transformers
-  - jaxtyping
-  - beartype
+  - conda-forge::jaxtyping
+  - conda-forge::beartype
   - matplotlib
-prefix: /home/radiohead/anaconda3/envs/tcc
+  - pip
+  - pip:
+    - opencv-python
