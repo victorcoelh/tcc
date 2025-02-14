@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from src.data_loading.dataset import Dataset
 from src.models.basemodel import Model
+from src.utils.early_stopper import EarlyStopper
 from src.utils.type_hints import ImageBatch
 
 
@@ -39,18 +40,19 @@ class ModelTrainer:
         time = datetime.now(None)   # noqa: DTZ005
         self.time = time.strftime("%d-%m_%H:%M:%S")
         Path(f"./runs/{self.time}").mkdir(parents=True)
-        
+
     def freeze_model_layers(self, layers_to_train: list[str]) -> None:
         for layer_name, param in self.__model.named_parameters():
             if not any(name in layer_name for name in layers_to_train):
                 param.requires_grad = False
-                
+
     def print_model_layers(self) -> None:
         for layer_name, _ in self.__model.named_parameters():
             print(layer_name)  # noqa: T201
 
     def train(self, epochs: int, training_dataset: Dataset, validation_dataset: Dataset) -> None:
         self.__model.train()
+        early_stopper = EarlyStopper(patience=4)
         
         for epoch in range(epochs):
             self.__model.train()
@@ -79,6 +81,7 @@ class ModelTrainer:
                                      f"Training Loss: {(total_loss/(i+1)):.4f} ")
                 
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.__model.parameters(), 1)
                 self.__optimizer.step()
                 self.__scheduler.step()
                 
@@ -90,10 +93,12 @@ class ModelTrainer:
                 self.__evaluate(validation_dataset)
                 
             print(f"Validation Meteor: {validation_meteor:.2f}, Cider: {validation_cider:.2f}")  # noqa: T201
-            
             self.__save_metrics(training_loss, validation_loss,
                                 training_cider, validation_cider,
                                 training_meteor, validation_meteor)
+            
+            if early_stopper.early_stop(validation_loss):
+                break
 
         self.__save_model()
         

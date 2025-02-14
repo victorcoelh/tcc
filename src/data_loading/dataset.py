@@ -3,7 +3,6 @@ from typing import TypeVar
 
 import cv2
 import numpy as np
-import pandas as pd
 
 from src.data_loading.preprocessing import resize_images
 from src.utils.type_hints import Image, ImageBatch
@@ -52,32 +51,7 @@ class Dataset:
         if self.__current < len(self):
             return self.__getitem__(self.__current)
         raise StopIteration
-    
-
-def get_path_and_captions(csv_path: str, image_dir: str) -> tuple[list[str], list[list[str]]]:
-    read_csv = pd.read_csv(csv_path)
-    
-    captions = read_csv["captions"]\
-        .to_list()
-
-    captions = list(map(fix_captions, captions))
-
-    file_paths = read_csv["filepath"]\
-        .map(lambda path: image_dir + path)\
-        .to_list()
-    
-    return file_paths, captions
 
 
 def load_image(image_path: str) -> Image:
-    image = cv2.imread(image_path)[:, :, ::-1]
-    return image
-
-
-def fix_captions(captions: str) -> list[str]:
-    fixed_captions = captions\
-        .replace("\n", "")\
-        .strip("[]")\
-        .split("' '")
-        
-    return [caption.strip("'\"") for caption in fixed_captions]
+    return cv2.imread(image_path)[:, :, ::-1]
