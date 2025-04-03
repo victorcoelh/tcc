@@ -1,66 +1,70 @@
-from pathlib import Path
+from typing import Any
 
-from sklearn.model_selection import train_test_split
+from ray import train, tune
+from ray.train import Checkpoint, get_checkpoint
+from ray.tune.schedulers import ASHAScheduler
 from torch.optim import Adam
 from torch.optim.lr_scheduler import OneCycleLR
 
-from src.data_loading import data_loading
-from src.data_loading.dataset import Dataset
+from src.entrypoints.helpers import load_cub_dataset
 from src.fine_tuning.adapter import add_adapters_to_model_layers  # noqa: F401
 from src.fine_tuning.methods import layernorm_tuning, lora_all_linear, lora_attn  # noqa: F401
 from src.fine_tuning.trainer import ModelTrainer
 from src.models.vitgpt2 import ViTGPT2
 
 
-def load_satellites_dataset(batch_size: int) -> tuple[Dataset, Dataset]:
-    images_dir = "dataset/satellite/"
-    train_csv = "dataset/satellite/train.csv"
-    valid_csv = "dataset/satellite/valid.csv"
+def ray_tune(max_epochs: int = 25, num_samples: int = 10) -> None:
+    search_space = {
+        "max_lr": tune.loguniform(1e-5, 1e-2),
+        "div_factor": tune.uniform(25, 250),
+        "weight_decay": tune.loguniform(0, 1e-4),
+        "batch_size": tune.choice([2, 4, 6]),
+        "epochs": max_epochs,
+    }
     
-    training_paths, training_captions = data_loading.from_csv(train_csv, images_dir)
-    training_subset = Dataset(training_paths, training_captions, batch_size, None)
-    
-    validation_paths, validation_captions = data_loading.from_csv(valid_csv, images_dir)
-    validation_subset = Dataset(validation_paths, validation_captions, 16, None)
-    
-    return training_subset, validation_subset
-    
-
-def load_cub_dataset(batch_size: int) -> tuple[Dataset, Dataset]:
-    dataset_dir = Path("dataset/cub200/")
-    ids_path = Path("dataset/cub200/train_test_split.txt")
-    
-    paths, captions = data_loading.from_cub(dataset_dir, ids_path, training=True)
-    train_paths, valid_paths, train_captions, valid_captions = train_test_split(
-        paths,
-        captions,
-        test_size=0.1,
-        shuffle=True,
+    scheduler = ASHAScheduler(
+        metric="loss",
+        mode="min",
+        max_t=max_epochs,
+        grace_period=2,
+        reduction_factor=2,
     )
     
-    return (
-        Dataset(train_paths, train_captions, batch_size),
-        Dataset(valid_paths, valid_captions, batch_size),
+    result = tune.run(
+        train_model,
+        resources_per_trial={"cpu": 16, "gpu": 1},
+        config=search_space,
+        num_samples=num_samples,
+        scheduler=scheduler,
     )
+    
+    best_trial = result.get_best_trial("loss", "min", "last")
+    if best_trial is None:
+        msg = "All trials returned NaN."
+        raise ValueError(msg)
+
+    print(f"Best trial config: {best_trial.config}")  # noqa: T201
+    print(f"Best trial final validation loss: {best_trial.last_result['loss']}")  # noqa: T201
+    print(f"Best trial final validation accuracy: {best_trial.last_result['accuracy']}")  # noqa: T201
 
 
-def main() -> None:
-    epochs = 60
-    batch_size = 6
+def train_model(config: dict[str, Any]) -> None:
+    epochs = config["epochs"]
+    batch_size = config["batch_size"]
     training_subset, validation_subset = load_cub_dataset(batch_size)
 
     optimizer_configs = {
         "lr": 1e-4,
         "betas": (0.9, 0.985),
         "eps": 1e-8,
-        "weight_decay": 0,
+        "weight_decay": config["weight_decay"],
     }
 
     scheduler_configs = {
-        "max_lr": 1e-4,
+        "max_lr": config["max_lr"],
         "epochs": epochs,
         "steps_per_epoch": len(training_subset),
-        "div_factor": 100,
+        "div_factor": config["div_factor"],
     }
 
     model = ViTGPT2("cuda:0")
@@ -69,13 +73,12 @@ def main() -> None:
     scheduler = OneCycleLR(optimizer, **scheduler_configs) # type: ignore
 
     trainer = ModelTrainer(model, optimizer, scheduler)
-    trainable_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
-    total_params = sum(p.numel() for p in model.model.parameters())
-    print(f"Trainable Params: {trainable_params} | Total Params: {total_params} | "  # noqa: T201
-          f"% = {trainable_params*100 / total_params:.2f}")
-
     trainer.train(epochs, training_subset, validation_subset)
     trainer.save_training_config(epochs, batch_size, optimizer_configs, scheduler_configs)
+
+
+def main() -> None:
+    ray_tune(10, 5)
 
 
 if __name__ == "__main__":

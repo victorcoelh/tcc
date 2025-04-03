@@ -15,25 +15,11 @@ def plot_image(img: Image) -> None:
 
 
 def main() -> None:
-    dataset = load_satellites_dataset(1)
+    dataset = load_cub_dataset(1)
     print(f"Image Path: {dataset.image_paths[0]}\n\n")
-    
-    base_model = ViTGPT2("cuda:0")
-    wise_model = ViTGPT2("cuda:0", "runs/satellite/Naive_Early")
-    wise(wise_model, base_model, 0.85)
-
-    models = [
-        base_model,
-        ViTGPT2("cpu", endpoint="runs/satellite/Naive_Early"),
-        wise_model,
-    ]
 
     img_test, captions = dataset[0]
-    
-    for model in models:
-        prediction = model.predict(img_test)
-        print(f"Model Prediction: {prediction}\n\n")
-    #print(f"Ground Truth: {captions[:3]}")
+    print(f"Ground Truth: {captions[:3]}")
 
 if __name__ == "__main__":
     main()
