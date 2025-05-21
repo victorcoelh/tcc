@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import safetensors.torch
 import torch
+from peft import PeftModel
 
 from src.data_loading import data_loading
 from src.data_loading.dataset import Dataset
@@ -76,13 +77,10 @@ def load_safetensors(file_path: str) -> dict[str, torch.Tensor]:
 
 
 def main() -> None:
-    testing_subset = load_cub_dataset(128)
+    testing_subset = load_satellites_dataset(128)
     
-    ft_model = ViTGPT2("cuda:0", endpoint="runs/cub200/Naive_All")
-    base_model = ViTGPT2("cuda:0")
-    wise(ft_model, base_model, 0.9)
-    
-    outcome = test_model(ft_model, testing_subset)
+    model = ViTGPT2("cuda:0")
+    outcome = test_model(model, testing_subset)
     print(outcome)
 
 

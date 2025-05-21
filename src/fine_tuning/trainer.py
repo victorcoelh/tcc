@@ -52,7 +52,7 @@ class ModelTrainer:
 
     def train(self, epochs: int, training_dataset: Dataset, validation_dataset: Dataset) -> None:
         self.__model.train()
-        early_stopper = EarlyStopper(patience=4)
+        early_stopper = EarlyStopper(patience=2)
         
         for epoch in range(epochs):
             self.__model.train()
@@ -111,6 +111,13 @@ class ModelTrainer:
             f.write(f"Scheduler: {type(self.__scheduler)}\n")
             f.write(f"Optimizer Config: {optimizer_config}\n")
             f.write(f"Scheduler Config: {scheduler_config}\n")
+            
+    def get_validation_metrics(self) -> dict[str, list[float]]:
+        return {
+            "loss": self.validation_loss,
+            "cider": self.validation_cider,
+            "meteor": self.validation_meteor,
+        }
             
     def __model_predict(self, images: ImageBatch,
                         captions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:

@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class EarlyStopper:
     def __init__(self, patience: int = 1, min_delta: float = 0) -> None:
         self.patience = patience
@@ -6,6 +9,9 @@ class EarlyStopper:
         self.min_validation_loss = float("inf")
         
     def early_stop(self, validation_loss: float) -> bool:
+        if validation_loss == np.nan:
+            return True
+        
         if validation_loss < self.min_validation_loss:
             self.min_validation_loss = validation_loss
             self.counter = 0

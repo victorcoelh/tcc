@@ -17,12 +17,8 @@ from src.utils.type_hints import ImageBatch
 
 
 class ModelTrainer:
-    def __init__(self, model: Model, optimizer: torch.optim.Optimizer,
+    def __init__(self, model_path: Path, optimizer: torch.optim.Optimizer,
                  scheduler: torch.optim.lr_scheduler.LRScheduler) -> None:
-        self.__model = model.model
-        self.__processor = model.processor
-        self.__tokenizer = model.tokenizer
-
         self.__loss = CrossEntropyLoss()
         self.__optimizer = optimizer
         self.__scheduler = scheduler

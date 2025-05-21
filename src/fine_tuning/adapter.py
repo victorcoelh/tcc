@@ -27,7 +27,7 @@ def add_adapters_to_model_layers(model: Model, layers: int, proj_size: int) -> N
         if not any(name in layer_name for name in layernorm_layers):
             param.requires_grad = False
         
-    for i in range(11, 10-layers, -1):
+    for i in range(11, 11-layers, -1):
         model.model.decoder.transformer.h[i].attn.c_proj = \
             Adapter(model.model.decoder.transformer.h[i].attn.c_proj, proj_size, 768)
         model.model.decoder.transformer.h[i].mlp.c_proj = \

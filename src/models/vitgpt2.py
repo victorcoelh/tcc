@@ -34,6 +34,9 @@ class ViTGPT2(Model):
         self.__model = get_peft_model(self.__model, config) # type: ignore
         self.__model.print_trainable_parameters()
         
+    def load_peft_petrained(self, path: str) -> None:
+        self.__model = PeftModel.from_pretrained(self.__model, path)
+        
     def load_state_dict(self, state_dict: Mapping[str, Any]) -> None:
         self.__model.load_state_dict(state_dict)
 
