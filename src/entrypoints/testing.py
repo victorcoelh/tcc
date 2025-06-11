@@ -77,9 +77,18 @@ def load_safetensors(file_path: str) -> dict[str, torch.Tensor]:
 
 
 def main() -> None:
-    testing_subset = load_satellites_dataset(128)
+    testing_subset = load_cub_dataset(128)
     
     model = ViTGPT2("cuda:0")
+    add_adapters_to_model_layers(model, 11, 64)
+    
+    new_state_dict = load_safetensors("./runs/updated/cub200/adapter_runs/best_cider/model.safetensors")
+    state_dict = model.model.state_dict()
+    
+    for key in new_state_dict:
+        state_dict[key] = new_state_dict[key]
+        
+    model.load_state_dict(state_dict)
     outcome = test_model(model, testing_subset)
     print(outcome)
 

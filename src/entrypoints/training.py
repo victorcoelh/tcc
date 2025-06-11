@@ -8,7 +8,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import OneCycleLR
 
 from src.entrypoints.helpers import load_cub_dataset, load_satellites_dataset  # noqa: F401
-from src.fine_tuning.adapter import add_adapters_to_model_layers
+from src.fine_tuning.adapter import add_adapters_to_model_layers  # noqa: F401
 from src.fine_tuning.methods import layernorm_tuning, lora_all_linear, lora_attn  # noqa: F401
 from src.fine_tuning.trainer import ModelTrainer
 from src.models.vitgpt2 import ViTGPT2
@@ -61,11 +61,11 @@ def train_model(config: dict[str, Any]) -> dict[str, list[float]]:
     }
 
     model = ViTGPT2("cuda:0")
-    add_adapters_to_model_layers(model, 11, 64)
     optimizer = Adam(model.model.parameters(), **optimizer_configs) # type: ignore
     scheduler = OneCycleLR(optimizer, **scheduler_configs) # type: ignore
 
     trainer = ModelTrainer(model, optimizer, scheduler)
+    layernorm_tuning(trainer)
     trainer.train(epochs, training_subset, validation_subset)
     trainer.save_training_config(epochs, batch_size, optimizer_configs, scheduler_configs)
     return trainer.get_validation_metrics()
