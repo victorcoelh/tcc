@@ -46,12 +46,12 @@ def test_model(model: Model, dataset: Dataset) -> pd.DataFrame:
 def wise_grid_search(model_path: str, dataset: Dataset) -> None:
     base_model = ViTGPT2("cuda:0")
     
-    for i in np.linspace(0.4, 0.9, 13):
+    for i in np.linspace(0.8, 1.0, 21):
         ft_model = ViTGPT2("cuda:0", endpoint=model_path)
         wise(ft_model, base_model, i)
         outcome = test_model(ft_model, dataset)
         with Path.open(Path("wise_results.txt"), "a") as f:
-            f.write(f"{outcome["mean"].to_numpy()}\n\n")
+            f.write(f"{i}: {outcome["mean"].to_numpy()}\n\n")
             
 
 def load_cub_dataset(batch_size: int) -> Dataset:
@@ -77,18 +77,13 @@ def load_safetensors(file_path: str) -> dict[str, torch.Tensor]:
 
 
 def main() -> None:
-    testing_subset = load_cub_dataset(128)
+    testing_subset = load_satellites_dataset(128)
     
-    model = ViTGPT2("cuda:0")
-    add_adapters_to_model_layers(model, 11, 64)
+    base_model = ViTGPT2("cuda:0")
+    model = ViTGPT2("cuda:0", endpoint="runs/updated/satellites/naive/best_cider/")
     
-    new_state_dict = load_safetensors("./runs/updated/cub200/adapter_runs/best_cider/model.safetensors")
-    state_dict = model.model.state_dict()
+    wise(model, base_model, 0.91)
     
-    for key in new_state_dict:
-        state_dict[key] = new_state_dict[key]
-        
-    model.load_state_dict(state_dict)
     outcome = test_model(model, testing_subset)
     print(outcome)
 

@@ -20,7 +20,7 @@ def get_random_params(seed: int | None = None) -> dict[str, Any]:
         "max_lr": float(loguniform.rvs(1e-5, 1e-2)),
         "div_factor": float(rng.uniform(25, 250)),
         "weight_decay": float(rng.choice([0, 1e-4, 1e-3])),
-        "batch_size": int(rng.choice([2, 4])),
+        "batch_size": int(rng.choice([2])),
     }
     
 
